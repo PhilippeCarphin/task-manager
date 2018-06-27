@@ -148,16 +148,15 @@ class Application(tk.Frame):
                 t.extra = json.loads(input_field.get())
             else:
                 t.__dict__[attr] = input_field.get()
+
         session = SessionClass()
         session.add(t)
         session.commit()
-        self.inputs['id'].delete(0, 'end')
-        self.inputs['id'].insert(0, t.id)
-        print('Added ' + repr(t))
         self.task_view.insert('', 0, t.id, values=t.as_list())
-        for e in self.task_view.selection_get():
+        
+        print(self.task_view.selection())
+        for e in (self.task_view.item(i) for i in self.task_view.selection()):
             print(e)
-
 
 
 if __name__ == '__main__':
