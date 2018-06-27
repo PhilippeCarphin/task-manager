@@ -1,5 +1,6 @@
 import tkinter as tk
 import json
+import os
 from datetime import datetime, time
 from tkinter import ttk
 
@@ -80,7 +81,7 @@ class Task(Base):
             return self.value * self.due_date_importance * (24/self.time_left)
         else:
             return self.value * self.due_date_importance / (self.past_due_importance_decrease_rate * (-self.time_left))
-        
+
     def as_list(self):
         return [self.id, self.value, self.due_date, self.due_date_importance, self.past_due_importance_decrease_rate,
                 self.description, self.time_per_week, self.absolute_date, self.extra]
@@ -97,8 +98,12 @@ class Task(Base):
             sesh.query(Task).filter(Task.id == elem_id).delete()
         sesh.commit()
 
+def dbpath():
+    this_file = os.path.abspath(__file__)
+    this_dir = os.path.dirname(this_file)
+    return os.path.join(this_dir, 'db.sqlite')
 
-engine = create_engine('sqlite:////home/pcarphin/Documents/GitHub/task-manager/db.sqlite')
+engine = create_engine('sqlite:///' + dbpath())
 SessionClass = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 
