@@ -132,6 +132,8 @@ class Application(tk.Frame):
 
         self.quit = tk.Button(self, text="QUIT", fg="red", command=root.destroy)
         self.quit.pack(side="bottom")
+        self.delete = tk.Button(self, text="delete_selected", fg='red', command=self.delete_selected)
+        self.delete.pack()
 
     def create_task(self):
         t = Task()
@@ -153,10 +155,13 @@ class Application(tk.Frame):
         session.add(t)
         session.commit()
         self.task_view.insert('', 0, t.id, values=t.as_list())
-        
-        print(self.task_view.selection())
-        for e in (self.task_view.item(i) for i in self.task_view.selection()):
-            print(e)
+
+    def delete_selected(self):
+
+        sel = self.task_view.selection()
+        items = (self.task_view.item(i) for i in sel)
+        for e in items:
+            print('WOULD DELETE ' + repr(e))
 
 
 if __name__ == '__main__':
