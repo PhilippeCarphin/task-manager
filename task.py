@@ -10,6 +10,17 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.types import TypeDecorator
 
+DEFAULTS = {
+        'value': '8',
+        'due_date': datetime.now().strftime('%Y/%m/%d %H:%M'),
+        'due_date_importance': '1',
+        'past_due_importance_decrease_rate': 7,
+        'description': 'This is the description of the task',
+        'time_per_week': '1,2,3,4',
+        'absolute_date': 'False',
+        'extra': '{"bonjour":"allo"}'
+}
+
 
 class TextPickleType(TypeDecorator):
 
@@ -43,7 +54,9 @@ class Task(Base):
     extra = Column(TextPickleType)
 
     def __repr__(self):
-        return "<{}(id={}, description='{}'. importance={})".format(__class__.__name__, self.id, self.description, self.importance)
+        return "<{}(id={}, description='{}'. importance={})".format(
+            __class__.__name__, self.id, self.description, self.importance
+        )
 
     def __str__(self):
         return str(self.__dict__)
@@ -77,26 +90,31 @@ class Task(Base):
         sesh = SessionClass()
         return sesh.query(cls).order_by(cls.id)
 
+    @classmethod
+    def delete_list(cls, id_list):
+        sesh = SessionClass()
+        for elem_id in id_list:
+            sesh.query(Task).filter(Task.id == elem_id).delete()
+        sesh.commit()
 
 
 engine = create_engine('sqlite:////home/pcarphin/Documents/GitHub/task-manager/db.sqlite')
 SessionClass = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 
-class TasKView(ttk.Treeview):
-    def __init__(self, master, *args, **kwargs):
-        super().__init__(master, height=10, columns=list(Task.get_column_names()) + ['importance'], displaycolumns=[0,1,2,3,4,5,6,7,8,9], show='headings')
+
+class TaskView(ttk.Treeview):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs,  height=10, columns=list(Task.get_column_names()) + ['importance'],
+                         displaycolumns=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], show='headings')
         n = 0
         for c in Task.get_column_names():
             self.heading(n, text=c)
             n += 1
+
     def show_list(self, task_list):
         for t in task_list:
             self.insert('', 0, iid=t.id, values=t.as_list()+[t.importance])
-        # n = 1
-        # for t in task_list:
-        #     self.insert(t.id, 0, values=t.as_list())
-        #     n = n+1
 
 
 class Application(tk.Frame):
@@ -104,38 +122,31 @@ class Application(tk.Frame):
         super().__init__(master)
         self.pack()
         self.inputs = {}
-        self.submit = None
-        self.quit = None
-        self.tree_view = None
+        self.submit = ttk.Button(self)
+        self.quit = tk.Button(self)
+        self.task_view = TaskView(self)
+        self.delete = tk.Button(self)
         self.create_widgets()
 
     def create_widgets(self):
         for attr in Task.get_column_names():
             self.inputs[attr] = ttk.Entry(self)
             self.inputs[attr].pack()
-        self.inputs['value'].insert(0, '8')
-        self.inputs['due_date'].insert(0, datetime.now().strftime('%Y/%m/%d %H:%M'))
-        self.inputs['due_date_importance'].insert(0, '1')
-        self.inputs['past_due_importance_decrease_rate'].insert(0, 7)
-        self.inputs['description'].insert(0, 'This is the description of the task')
-        self.inputs['time_per_week'].insert(0, '1,2,3,4')
-        self.inputs['absolute_date'].insert(0, 'False')
-        self.inputs['extra'].insert(0, '{"bonjour":"allo"}')
-        self.submit = ttk.Button(self)
-        self.submit["text"] = "Submit Task"
-        self.submit["command"] = self.create_task
+            attr != 'id' and self.inputs[attr].insert(0, DEFAULTS[attr])
+
+        self.submit.config(text="Submit Task", command=self.create_task)
         self.submit.pack(side="top")
 
-        self.task_view = TasKView(self)
         self.task_view.pack()
         self.task_view.show_list(Task.query_all())
 
-        self.quit = tk.Button(self, text="QUIT", fg="red", command=root.destroy)
+        self.quit.configure(text="QUIT", fg="red", command=root.destroy)
         self.quit.pack(side="bottom")
-        self.delete = tk.Button(self, text="delete_selected", fg='red', command=self.delete_selected)
+
+        self.delete.configure(text="delete_selected", fg='red', command=self.delete_selected)
         self.delete.pack()
 
-    def create_task(self):
+    def task_from_inputs(self):
         t = Task()
         for attr, input_field in [i for i in self.inputs.items() if i[0] != 'id']:
             if attr == 'id':
@@ -150,18 +161,21 @@ class Application(tk.Frame):
                 t.extra = json.loads(input_field.get())
             else:
                 t.__dict__[attr] = input_field.get()
+        return t
+
+    def create_task(self):
+        new_task = self.task_from_inputs()
 
         session = SessionClass()
-        session.add(t)
+        session.add(new_task)
         session.commit()
-        self.task_view.insert('', 0, t.id, values=t.as_list())
+
+        self.task_view.insert('', 0, new_task.id, values=new_task.as_list())
 
     def delete_selected(self):
-
         sel = self.task_view.selection()
-        items = (self.task_view.item(i) for i in sel)
-        for e in items:
-            print('WOULD DELETE ' + repr(e))
+        Task.delete_list(sel)
+        self.task_view.delete(*sel)
 
 
 if __name__ == '__main__':
