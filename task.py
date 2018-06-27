@@ -32,7 +32,7 @@ Base = declarative_base()
 class Task(Base):
     __tablename__ = 'tasks'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, sqlalchemy.Sequence('user-id-seq'), primary_key=True)
     value = Column(Integer)
     due_date = Column(DateTime)
     due_date_importance = Column(Integer)
@@ -41,6 +41,9 @@ class Task(Base):
     time_per_week = Column(Time)
     absolute_date = Column(Boolean)
     extra = Column(TextPickleType)
+
+    def __repr__(self):
+        return "<{}(id={}, description='{}'. importance={})".format(__class__.__name__, self.id, self.description, self.importance)
 
     def __str__(self):
         return str(self.__dict__)
@@ -65,8 +68,14 @@ class Task(Base):
         else:
             return self.value * self.due_date_importance / (self.past_due_importance_decrease_rate * (-self.time_left))
 
+    @classmethod
+    def query_all(cls):
+        sesh = SessionClass()
+        return sesh.query(cls).order_by(cls.id)
 
-engine = create_engine('sqlite:////home/pcarphin/Documents/GitHub/task-manager/db.sqlite', echo=True)
+
+
+engine = create_engine('sqlite:////home/pcarphin/Documents/GitHub/task-manager/db.sqlite')
 SessionClass = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 
@@ -118,9 +127,11 @@ class Application(tk.Frame):
         session = SessionClass()
         session.add(t)
         session.commit()
-        print(t.importance)
         self.inputs['id'].delete(0, 'end')
         self.inputs['id'].insert(0, t.id)
+        print(repr(t))
+        for e in Task.query_all():
+            print(repr(e))
 
 
 if __name__ == '__main__':
