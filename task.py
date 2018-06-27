@@ -67,6 +67,10 @@ class Task(Base):
             return self.value * self.due_date_importance * (24/self.time_left)
         else:
             return self.value * self.due_date_importance / (self.past_due_importance_decrease_rate * (-self.time_left))
+        
+    def as_list(self):
+        return [self.id, self.value, self.due_date, self.due_date_importance, self.past_due_importance_decrease_rate,
+                self.description, self.time_per_week, self.absolute_date, self.extra]
 
     @classmethod
     def query_all(cls):
@@ -79,6 +83,21 @@ engine = create_engine('sqlite:////home/pcarphin/Documents/GitHub/task-manager/d
 SessionClass = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 
+class TasKView(ttk.Treeview):
+    def __init__(self, master, *args, **kwargs):
+        super().__init__(master, height=10, columns=list(Task.get_column_names()) + ['importance'], displaycolumns=[0,1,2,3,4,5,6,7,8,9], show='headings')
+        n = 0
+        for c in Task.get_column_names():
+            self.heading(n, text=c)
+            n += 1
+    def show_list(self, task_list):
+        for t in task_list:
+            self.insert('', 0, iid=t.id, values=t.as_list()+[t.importance])
+        # n = 1
+        # for t in task_list:
+        #     self.insert(t.id, 0, values=t.as_list())
+        #     n = n+1
+
 
 class Application(tk.Frame):
     def __init__(self, master=None):
@@ -87,6 +106,7 @@ class Application(tk.Frame):
         self.inputs = {}
         self.submit = None
         self.quit = None
+        self.tree_view = None
         self.create_widgets()
 
     def create_widgets(self):
@@ -105,6 +125,10 @@ class Application(tk.Frame):
         self.submit["text"] = "Submit Task"
         self.submit["command"] = self.create_task
         self.submit.pack(side="top")
+
+        self.task_view = TasKView(self)
+        self.task_view.pack()
+        self.task_view.show_list(Task.query_all())
 
         self.quit = tk.Button(self, text="QUIT", fg="red", command=root.destroy)
         self.quit.pack(side="bottom")
@@ -129,9 +153,11 @@ class Application(tk.Frame):
         session.commit()
         self.inputs['id'].delete(0, 'end')
         self.inputs['id'].insert(0, t.id)
-        print(repr(t))
-        for e in Task.query_all():
-            print(repr(e))
+        print('Added ' + repr(t))
+        self.task_view.insert('', 0, t.id, values=t.as_list())
+        for e in self.task_view.selection_get():
+            print(e)
+
 
 
 if __name__ == '__main__':
