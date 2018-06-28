@@ -111,7 +111,7 @@ Base.metadata.create_all(engine)
 class TaskView(ttk.Treeview):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs,  height=10, columns=list(Task.get_column_names()) + ['importance'],
-                         displaycolumns=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9], show='headings')
+                         displaycolumns=[0, 1, 2, 3, 4, 5, 6, 7, 8], show='headings')
         n = 0
         for c in Task.get_column_names():
             self.heading(n, text=c)
