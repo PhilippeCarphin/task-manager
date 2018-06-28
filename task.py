@@ -119,7 +119,7 @@ class TaskView(ttk.Treeview):
 
     def show_list(self, task_list):
         for t in task_list:
-            self.insert('', 0, iid=t.id, values=t.as_list()+[t.importance])
+            self.insert('', 0, iid=t.id, values=t.as_list())
 
 
 class Application(tk.Frame):
