@@ -121,37 +121,19 @@ class TaskView(ttk.Treeview):
         for t in task_list:
             self.insert('', 0, iid=t.id, values=t.as_list())
 
-
-class Application(tk.Frame):
-    def __init__(self, master=None):
-        super().__init__(master)
-        self.pack()
+class TaskEditView(tk.Frame):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.inputs = {}
-        self.submit = ttk.Button(self)
-        self.quit = tk.Button(self)
-        self.task_view = TaskView(self)
-        self.delete = tk.Button(self)
-        self.create_widgets()
-
-    def create_widgets(self):
         for attr in Task.get_column_names():
             self.inputs[attr] = ttk.Entry(self)
             self.inputs[attr].pack()
             attr != 'id' and self.inputs[attr].insert(0, DEFAULTS[attr])
+        self.inputs['importance'] = ttk.Entry(self)
+        self.inputs['importance'].insert(0, 'importance')
+        self.inputs['importance'].pack()
 
-        self.submit.config(text="Submit Task", command=self.create_task)
-        self.submit.pack(side="top")
-
-        self.task_view.pack()
-        self.task_view.show_list(Task.query_all())
-
-        self.quit.configure(text="QUIT", fg="red", command=root.destroy)
-        self.quit.pack(side="bottom")
-
-        self.delete.configure(text="delete_selected", fg='red', command=self.delete_selected)
-        self.delete.pack()
-
-    def task_from_inputs(self):
+    def get_task(self):
         t = Task()
         for attr, input_field in [i for i in self.inputs.items() if i[0] != 'id']:
             if attr == 'id':
@@ -168,14 +150,51 @@ class Application(tk.Frame):
                 t.__dict__[attr] = input_field.get()
         return t
 
-    def create_task(self):
-        new_task = self.task_from_inputs()
+    def set_inputs(self, task):
 
+        for attr in Task.get_column_names():
+            self.inputs[attr].delete(0,'end')
+            self.inputs[attr].insert(0,task.__dict__[attr])
+        self.inputs['importance'].delete(0,'end')
+        self.inputs['importance'].insert(0, task.importance)
+
+
+class Application(tk.Frame):
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.pack()
+        self.submit = ttk.Button(self)
+        self.quit = tk.Button(self)
+        self.task_view = TaskView(self)
+        self.delete = tk.Button(self)
+        self.task_new_view = TaskEditView(self)
+        self.task_edit_view = TaskEditView(self)
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.task_edit_view.pack()
+        self.task_new_view.pack()
+
+        self.submit.config(text="Submit Task", command=self.create_task)
+        self.submit.pack(side="top")
+
+        self.task_view.pack()
+        self.task_view.show_list(Task.query_all())
+
+        self.quit.configure(text="QUIT", fg="red", command=root.destroy)
+        self.quit.pack(side="bottom")
+
+        self.delete.configure(text="delete_selected", fg='red', command=self.delete_selected)
+        self.delete.pack()
+
+    def create_task(self):
+        new_task = self.task_new_view.get_task()
         session = SessionClass()
         session.add(new_task)
         session.commit()
 
         self.task_view.insert('', 0, new_task.id, values=new_task.as_list())
+        self.task_view.selection_add(new_task.id)
 
     def delete_selected(self):
         sel = self.task_view.selection()
