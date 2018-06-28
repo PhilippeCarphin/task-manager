@@ -180,6 +180,7 @@ class Application(tk.Frame):
 
         self.task_view.pack()
         self.task_view.show_list(Task.query_all())
+        self.task_view.bind('<<TreeviewSelect>>', self.on_select)
 
         self.quit.configure(text="QUIT", fg="red", command=root.destroy)
         self.quit.pack(side="bottom")
@@ -200,6 +201,13 @@ class Application(tk.Frame):
         sel = self.task_view.selection()
         Task.delete_list(sel)
         self.task_view.delete(*sel)
+
+    def on_select(self, event):
+        sel = self.task_view.selection()[0]
+        sesh = SessionClass()
+        task = sesh.query(Task).filter(Task.id == sel).one()
+        self.task_edit_view.set_inputs(task)
+        print("TreeviewSelect : self.task_view.se.ection()[0]=" + str(sel))
 
 
 if __name__ == '__main__':
