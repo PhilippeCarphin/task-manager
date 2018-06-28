@@ -84,7 +84,7 @@ class Task(Base):
 
     def as_list(self):
         return [self.id, self.value, self.due_date, self.due_date_importance, self.past_due_importance_decrease_rate,
-                self.description, self.time_per_week, self.absolute_date, self.extra]
+                self.description, self.time_per_week, self.absolute_date, self.extra, self.importance]
 
     @classmethod
     def query_all(cls):
