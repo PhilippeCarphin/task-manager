@@ -98,10 +98,12 @@ class Task(Base):
             sesh.query(Task).filter(Task.id == elem_id).delete()
         sesh.commit()
 
+
 def dbpath():
     this_file = os.path.abspath(__file__)
     this_dir = os.path.dirname(this_file)
     return os.path.join(this_dir, 'db.sqlite')
+
 
 engine = create_engine('sqlite:///' + dbpath())
 SessionClass = sessionmaker(bind=engine)
