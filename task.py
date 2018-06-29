@@ -166,9 +166,9 @@ class Application(tk.Frame):
         super().__init__(master)
         self.pack()
         self.submit = ttk.Button(self)
-        self.quit = tk.Button(self)
+        self.quit = ttk.Button(self)
         self.task_view = TaskView(self)
-        self.delete = tk.Button(self)
+        self.delete = ttk.Button(self)
         self.task_new_view = TaskEditView(self)
         self.task_edit_view = TaskEditView(self)
         self.create_widgets()
@@ -184,10 +184,10 @@ class Application(tk.Frame):
         self.task_view.show_list(Task.query_all())
         self.task_view.bind('<<TreeviewSelect>>', self.on_select)
 
-        self.quit.configure(text="QUIT", fg="red", command=root.destroy)
+        self.quit.configure(text="QUIT")
         self.quit.pack(side="bottom")
 
-        self.delete.configure(text="delete_selected", fg='red', command=self.delete_selected)
+        self.delete.configure(text="delete_selected", command=self.delete_selected)
         self.delete.pack()
 
     def create_task(self):
